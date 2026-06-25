@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>California Lighthouse Chart</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --sea:#0b2730; --sea2:#0e323b; --panel:#102f38; --panel2:#0d2a32;
+  --land:#cbb98e; --land-edge:#e7d8b0;
+  --amber:#f4b860; --glow:#ffd98a;
+  --slate:#6f8d92; --unknown:#caa15a; --cyan:#5fd0c5;
+  --ink:#eef4f2; --mut:#8fb0b2; --hair:#244c56; --hair2:#1c3d46;
+  --red:#d98a72;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:
+   radial-gradient(1200px 800px at 70% -10%, #12404b 0%, transparent 60%),
+   var(--sea);color:var(--ink);
+   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+body{-webkit-font-smoothing:antialiased}
+.mono{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+a{color:inherit}
+
+.wrap{max-width:1280px;margin:0 auto;padding:clamp(16px,3vw,34px)}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;gap:18px 28px;justify-content:space-between;
+  border-bottom:1px solid var(--hair);padding-bottom:20px;margin-bottom:22px}
+.brand .eyebrow{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.32em;
+  text-transform:uppercase;color:var(--amber);margin:0 0 8px}
+.brand h1{font-family:"Fraunces",serif;font-weight:500;font-size:clamp(30px,5vw,52px);
+  line-height:.98;margin:0;letter-spacing:-.01em}
+.brand h1 em{font-style:italic;color:var(--glow)}
+.brand p{margin:10px 0 0;color:var(--mut);max-width:46ch;font-size:14px;line-height:1.5}
+
+.counts{display:flex;gap:22px;flex-wrap:wrap}
+.stat{text-align:right}
+.stat .num{font-family:"Fraunces",serif;font-size:34px;line-height:1;font-weight:500}
+.stat .lab{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--mut);margin-top:6px}
+.stat .num.a{color:var(--amber)} .stat .num.d{color:var(--slate)}
+
+.controls{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;margin-bottom:18px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:.04em;
+  border:1px solid var(--hair);background:var(--panel2);color:var(--mut);
+  padding:7px 13px;border-radius:999px;cursor:pointer;transition:.15s;white-space:nowrap}
+.chip:hover{border-color:var(--amber);color:var(--ink)}
+.chip.on{background:var(--amber);color:#10242a;border-color:var(--amber);font-weight:600}
+.search{flex:1;min-width:170px;display:flex;align-items:center;gap:8px;
+  border:1px solid var(--hair);background:var(--panel2);border-radius:999px;padding:7px 14px}
+.search input{flex:1;background:none;border:none;outline:none;color:var(--ink);
+  font-family:"IBM Plex Mono",monospace;font-size:13px}
+.search input::placeholder{color:var(--mut)}
+.statusseg{display:flex;border:1px solid var(--hair);border-radius:999px;overflow:hidden}
+.statusseg button{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.06em;
+  background:var(--panel2);color:var(--mut);border:none;padding:7px 12px;cursor:pointer;transition:.15s}
+.statusseg button.on{background:var(--ink);color:#10242a;font-weight:600}
+
+.layout{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:22px;align-items:start}
+@media(max-width:880px){.layout{grid-template-columns:1fr}}
+
+.mapcard{position:sticky;top:16px;border:1px solid var(--hair);border-radius:16px;
+  background:linear-gradient(180deg,var(--panel) 0%,var(--panel2) 100%);
+  padding:10px;overflow:hidden}
+@media(max-width:880px){.mapcard{position:static}}
+.maphead{display:flex;justify-content:space-between;align-items:center;
+  padding:6px 8px 10px;gap:10px}
+.maphead .route{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--mut);
+  letter-spacing:.04em}
+.maphead .route b{color:var(--glow);font-weight:600}
+svg{width:100%;height:auto;display:block;touch-action:manipulation}
+.legend{display:flex;gap:16px;flex-wrap:wrap;padding:10px 8px 4px;
+  font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--mut)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:middle}
+
+.coast{fill:var(--land);stroke:var(--land-edge);stroke-width:1.1;
+  stroke-linejoin:round;filter:drop-shadow(0 6px 18px rgba(0,0,0,.45))}
+.grid{stroke:var(--hair2);stroke-width:.6}
+.gridlab{fill:var(--mut);font-family:"IBM Plex Mono",monospace;font-size:8px;opacity:.7}
+.routeline{fill:none;stroke:var(--glow);stroke-width:1.6;stroke-linecap:round;
+  stroke-dasharray:4 5;opacity:.85;animation:dash 22s linear infinite}
+@keyframes dash{to{stroke-dashoffset:-200}}
+.mk{cursor:pointer;transition:transform .12s}
+.mk .hit{fill:transparent}
+.mk circle.dot{stroke:#0c2b33;stroke-width:1}
+.mk.active circle.dot{fill:var(--amber)}
+.mk.inactive circle.dot{fill:var(--slate)}
+.mk.unknown circle.dot{fill:var(--unknown)}
+.mk .beam{fill:var(--glow);opacity:.0}
+.mk.active .beam{opacity:.18;animation:pulse 3.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.10;r:7}50%{opacity:.28;r:11}}
+.mk.dim{opacity:.16;pointer-events:none}
+.mk.sel circle.dot{stroke:var(--cyan);stroke-width:2.5}
+.mk.sel .ring{stroke:var(--cyan)}
+.anchor text{fill:var(--cyan);font-family:"IBM Plex Mono",monospace;font-size:9px}
+.anchor path{fill:var(--cyan)}
+
+.tip{position:absolute;pointer-events:none;z-index:9;background:#06181d;
+  border:1px solid var(--hair);border-radius:8px;padding:7px 10px;font-size:12px;
+  color:var(--ink);opacity:0;transition:opacity .12s;max-width:200px}
+.tip .tn{font-family:"Fraunces",serif;font-size:13px}
+.tip .tm{font-family:"IBM Plex Mono",monospace;font-size:10px;color:var(--mut);margin-top:2px}
+
+.list{display:flex;flex-direction:column;gap:9px}
+.row{display:grid;grid-template-columns:34px 1fr auto;gap:12px;align-items:center;
+  border:1px solid var(--hair);background:var(--panel2);border-radius:12px;
+  padding:11px 13px;cursor:pointer;transition:.14s;scroll-margin-top:90px}
+.row:hover{border-color:var(--amber);background:var(--panel)}
+.row.sel{border-color:var(--cyan);box-shadow:0 0 0 1px var(--cyan) inset}
+.row.hidden{display:none}
+.ord{font-family:"Fraunces",serif;font-size:20px;color:var(--mut);text-align:center;line-height:1}
+.row .nm{font-family:"Fraunces",serif;font-size:17px;font-weight:500;line-height:1.1}
+.row .meta{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--mut);
+  margin-top:4px;display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center}
+.dotS{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px}
+.dotS.active{background:var(--amber)} .dotS.inactive{background:var(--slate)} .dotS.unknown{background:var(--unknown)}
+.tag{border:1px solid var(--hair);border-radius:6px;padding:1px 7px;color:var(--mut)}
+.dir{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.03em;
+  text-decoration:none;border:1px solid var(--hair);border-radius:8px;padding:8px 10px;
+  color:var(--glow);white-space:nowrap;transition:.14s}
+.dir:hover{border-color:var(--glow);background:rgba(255,217,138,.08)}
+.empty{color:var(--mut);font-family:"IBM Plex Mono",monospace;font-size:13px;padding:30px 4px}
+
+footer{margin-top:30px;border-top:1px solid var(--hair);padding-top:16px;
+  color:var(--mut);font-family:"IBM Plex Mono",monospace;font-size:11px;line-height:1.7}
+footer a{color:var(--glow)}
+@media(prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <p class="eyebrow">Pacific Coast &middot; 51 Lights</p>
+      <h1>California<br>Lighthouse <em>Chart</em></h1>
+      <p>Every lighthouse in the state, plotted by its true coordinates. Pick a region to draw an efficient driving order from Santa Cruz. Log your visits, photos, and notes in your Notion passport.</p>
+    </div>
+    <div class="counts">
+      <div class="stat"><div class="num">51</div><div class="lab">Total</div></div>
+      <div class="stat"><div class="num a" id="cActive">0</div><div class="lab">Standing &middot; Active</div></div>
+      <div class="stat"><div class="num d" id="cDead">0</div><div class="lab">Gone &middot; Inactive</div></div>
+    </div>
+  </header>
+
+  <div class="controls">
+    <div class="chips" id="regionChips"></div>
+    <div class="statusseg" id="statusSeg">
+      <button data-s="all" class="on">All</button>
+      <button data-s="Active">Active</button>
+      <button data-s="Inactive">Inactive</button>
+      <button data-s="Unknown">?</button>
+    </div>
+    <label class="search">
+      <span class="mono" style="color:var(--mut)">&#9906;</span>
+      <input id="search" placeholder="search name or town" autocomplete="off">
+    </label>
+  </div>
+
+  <div class="layout">
+    <div class="mapcard">
+      <div class="maphead">
+        <div class="route" id="routeNote">Showing all regions</div>
+        <div class="route mono" id="distNote"></div>
+      </div>
+      <div style="position:relative">
+        <svg id="map" viewBox="0 0 600 740" role="img" aria-label="Map of California lighthouses"></svg>
+        <div class="tip" id="tip"></div>
+      </div>
+      <div class="legend">
+        <span><i style="background:var(--amber)"></i>Active</span>
+        <span><i style="background:var(--slate)"></i>Inactive / gone</span>
+        <span><i style="background:var(--unknown)"></i>Unknown</span>
+        <span><i style="background:var(--cyan)"></i>Santa Cruz anchor</span>
+      </div>
+    </div>
+
+    <div>
+      <div class="list" id="list"></div>
+      <div class="empty" id="empty" style="display:none">No lighthouses match those filters.</div>
+    </div>
+  </div>
+
+  <footer>
+    Data from the Wikipedia list of California lighthouses. Driving order computed from a Santa Cruz, CA start point (nearest-neighbor + 2-opt, great-circle distance) &mdash; a planning guide, not turn-by-turn directions. Directions buttons open Google Maps from Santa Cruz to each light.<br>
+    This map is a reference. Mark visits, dates, photos, and notes in your <b>California Lighthouse Passport</b> in Notion.
+  </footer>
+</div>
+
+<script>
+const DATA = {"anchor":{"name":"Santa Cruz, CA","lat":36.9741,"lon":-122.0308},"regionRoutes":{"SF Bay Area":[3,21,34,17,25,28,10,12,31,46,24,1,51,18,41,7,16,8,36,9],"South Coast":[23,27,43,2,30,39,29,15,13,19,14,4,32,33],"North Coast":[40,6,49,11,50,5,47],"Central Coast":[45,44,35,38,20,37],"Mendocino Coast":[22,26],"Lake Tahoe":[42,48]},"regionSequence":["Central Coast","SF Bay Area","Mendocino Coast","North Coast","Lake Tahoe","South Coast"],"items":[{"id":1,"n":"Alcatraz Island Light","loc":"San Francisco (Alcatraz Island)","lat":37.82625,"lon":-122.422167,"yr":1854,"s":"Active","r":"SF Bay Area","to":5,"ro":12,"g":"https://www.google.com/maps/dir/?api=1&origin=Santa+Cruz,CA&destination=37.82625,-122.422167"},{"id":2,"n":"Anacapa Island Light","loc":"Anacapa Island","lat":34.015827,"lon":-119.359548,"yr":1912,"s":"Active","r":"South Coast","to":41,"ro":4,"g":"https://www.google.com/maps/dir/?api=1&origin=Santa+Cruz,CA&destination=34.015827,-119.359548"},{"id":3,"n":"Ano Nuevo Light","loc":"A\u00f1o Nuevo Island","lat":37.1083,"lon":-122.3378,"yr":1890,"s":"Inactive","r":"SF Bay Area","to":33,"ro":1,"g":"https://www.google.com/maps/dir/?api=1&origin=Santa+Cruz,CA&destination=37.1083,-122.3378"},{"id":4,"n":"Ballast Point Light","loc":"San Diego (Point Loma)","lat":32.686389,"lon":-117.2325,"yr":1890,"s":"Inactive","r":"South Coast","to":49,"ro":12,"g":"https://www.google.com/maps/dir/?api=1&origin=Santa+Cruz,CA&destination=32.686389,-117.2325"},{"id":5,"n":"Battery Point Light","loc":"Crescent City","lat":41.744094,"lon":-124.203099,"yr":1856,"s":"Active","r":"North Coast","to":20,"ro":6,"g":"https://www.google.com/maps/dir/?api=1&origin=Santa+Cruz,CA&destination=41.744094,-124.203099"},{"id":6,"n":"Cape Mendocino Light","loc":"Shelter Cove","lat":40.4399056,"lon":-124.4060306,"yr":1868,"s":"Inactive","r":"North Coast","to":25,"ro":2,"g":"https://www.google.com/maps/dir/?api=1&origin=Santa+Cruz,CA&destination=40.4399056,-124.4060306"},{"id":7,"n":"Carquinez Strait Light","loc":"Vallejo","lat":38.067816,"lon":-122.213832,"yr":1910,"s":"Inactive","r":"SF Bay Area","to":16,"ro":16,"g":"https://www.google.com/maps/dir/?api=1&origin=Santa+Cruz,CA&destination=38.067816,-122.213832"},{"id":8,"n":"East Brother Island Light","loc":"Richmond","lat":37.963233,"lon":-122.433643,"yr":1874,"s":"Active","r":"SF Bay Area","to":14,"ro":18,"g":"https://www.google.com/maps/dir/?api=1&origin=Santa+Cruz,CA&destination=37.963233,-122.433643"},{"id":9,"n":"Farallon Island Light","loc":"San Francisco (Farallon Islands)","lat":37.698966,"lon":-123.001651,"yr":1856,"s":"Active","r":"SF Bay Area","to":30,"ro":20,"g":"https://www.google.com/maps/dir/?api=1&origin=Santa+Cruz,CA&destination=37.698966,-123.001651"},{"id":10,"n":"Fort Point Light","loc":"San Francisco","lat":37.81056,"lon":-122.477333,"yr":1855,"s":"Inactive","r":"SF Bay Area","to":6,"ro":7,"g":"https://www.google.com/maps/dir/?api=1&origin=Santa+Cruz,CA&destination=37.81056,-122.477333"},{"id":11,"n":"Humboldt Harbor Light","loc":"Eureka (Humboldt Bay)","lat":40.768639,"lon":-124.221028,"yr":1856,"s":"Inactive","r":"North Coast","to":23,"ro":4,"g":"https://www.google.com/maps/dir/?api=1&origin=Santa+Cruz,CA&destination=40.768639,-124.221028"},{"id":12,"n":"Lime Point Light","loc":"San Francisco","lat":37.825447,"lon":-122.478321,"yr":1900,"s":"Active","r":"SF Bay Area","to":10,"ro":8,"g":"https://www.google.com/maps/dir/?api=1&origin=Santa+Cruz,CA&destination=37.825447,-122.478321"},{"id":13,"n":"Lions Lighthouse for Sight","loc":"Long Beach","lat":33.7602334,"lon":-118.1941101,"yr":2000,"s":"Unknown","r":"South Coast","to":46,"ro":9,"g":"https://www.google.com/maps/dir/?api=1&origin=Santa+Cruz,CA&destination=33.7602334,-118.1941101"},{"id":14,"n":"Long Beach Light","loc":"Long Beach (Port of Long Beach)","lat":33.723237,"lon":-118.186821,"yr":1949,"s":"Active","r":"South Coast","to":48,"ro":11,"g":"https://www.google.com/maps/dir/?api=1&origin=Santa+Cruz,CA&destination=33.723237,-118.186821"},{"id":15,"n":"Los Angeles Harbor Light","loc":"Los Angeles (Port of Los Angeles)","lat":33.70857,"lon":-118.2516,"yr":1913,"s":"Active","r":"South Coast","to":45,"ro":8,"g":"https://www.google.com/maps/dir/?api=1&origin=Santa+Cruz,CA&destination=33.70857,-118.2516"},{"id":16,"n":"Mare Island Light","loc":"Vallejo (Mare Island)","lat":38.074834,"lon":-122.250464,"yr":1873,"s":"Inactive","r":"SF Bay Area","to":15,"ro":17,"g":"https://www.google.com/maps/dir/?api=1&origin=Santa+Cruz,CA&destination=38.074834,-122.250464"},{"id":17,"n":"Mile Rocks Light","loc":"San Francisco","lat":37.792765,"lon":-122.510366,"yr":1906,"s":"Active","r":"SF Bay Area","to":7,"ro":4,"g":"https://www.google.com/maps/dir/?api=1&origin=Santa+Cruz,CA&destination=37.792765,-122.510366"},{"id":18,"n":"Oakland Harbor Light","loc":"Oakland","lat":37.781335,"lon":-122.243817,"yr":1890,"s":"Inactive","r":"SF Bay Area","to":3,"ro":14,"g":"https://www.google.com/maps/dir/?api=1&origin=Santa+Cruz,CA&destination=37.781335,-122.243817"},{"id":19,"n":"Parkers' Lighthouse","loc":"Long Beach","lat":33.7598744,"lon":-118.1920629,"yr":null,"s":"Unknown","r":"South Coast","to":47,"ro":10,"g":"https://www.google.com/maps/dir/?api=1&origin=Santa+Cruz,CA&destination=33.7598744,-118.1920629"},{"id":20,"n":"Piedras Blancas Light","loc":"San Simeon","lat":35.665639,"lon":-121.284333,"yr":1875,"s":"Active","r":"Central Coast","to":36,"ro":5,"g":"https://www.google.com/maps/dir/?api=1&origin=Santa+Cruz,CA&destination=35.665639,-121.284333"},{"id":21,"n":"Pigeon Point Light","loc":"Half Moon Bay","lat":37.18175,"lon":-122.393917,"yr":1872,"s":"Active","r":"SF Bay Area","to":32,"ro":2,"g":"https://www.google.com/maps/dir/?api=1&origin=Santa+Cruz,CA&destination=37.18175,-122.393917"},{"id":22,"n":"Point Arena Light","loc":"Point Arena","lat":38.95475,"lon":-123.7405,"yr":1870,"s":"Active","r":"Mendocino Coast","to":28,"ro":1,"g":"https://www.google.com/maps/dir/?api=1&origin=Santa+Cruz,CA&destination=38.95475,-123.7405"},{"id":23,"n":"Point Arguello Light","loc":"Lompoc (Point Arguello)","lat":34.577056,"lon":-120.647194,"yr":1901,"s":"Inactive","r":"South Coast","to":38,"ro":1,"g":"https://www.google.com/maps/dir/?api=1&origin=Santa+Cruz,CA&destination=34.577056,-120.647194"},{"id":24,"n":"Point Blunt Light","loc":"San Francisco (Angel Island)","lat":37.8532333,"lon":-122.4192361,"yr":1915,"s":"Active","r":"SF Bay Area","to":12,"ro":11,"g":"https://www.google.com/maps/dir/?api=1&origin=Santa+Cruz,CA&destination=37.8532333,-122.4192361"},{"id":25,"n":"Point Bonita Light","loc":"San Francisco (Point Bonita)","lat":37.815614,"lon":-122.529578,"yr":1855,"s":"Active","r":"SF Bay Area","to":8,"ro":5,"g":"https://www.google.com/maps/dir/?api=1&origin=Santa+Cruz,CA&destination=37.815614,-122.529578"},{"id":26,"n":"Point Cabrillo Light","loc":"Caspar","lat":39.3486028,"lon":-123.8261167,"yr":1909,"s":"Active","r":"Mendocino Coast","to":27,"ro":2,"g":"https://www.google.com/maps/dir/?api=1&origin=Santa+Cruz,CA&destination=39.3486028,-123.8261167"},{"id":27,"n":"Point Conception Light","loc":"Lompoc (Point Conception)","lat":34.4487528,"lon":-120.4707528,"yr":1856,"s":"Active","r":"South Coast","to":39,"ro":2,"g":"https://www.google.com/maps/dir/?api=1&origin=Santa+Cruz,CA&destination=34.4487528,-120.4707528"},{"id":28,"n":"Point Diablo Light","loc":"San Francisco (Golden Gate)","lat":37.820171,"lon":-122.499423,"yr":1923,"s":"Active","r":"SF Bay Area","to":9,"ro":6,"g":"https://www.google.com/maps/dir/?api=1&origin=Santa+Cruz,CA&destination=37.820171,-122.499423"},{"id":29,"n":"Point Fermin Light","loc":"Los Angeles (San Pedro)","lat":33.70542,"lon":-118.293649,"yr":1874,"s":"Inactive","r":"South Coast","to":44,"ro":7,"g":"https://www.google.com/maps/dir/?api=1&origin=Santa+Cruz,CA&destination=33.70542,-118.293649"},{"id":30,"n":"Point Hueneme Light","loc":"Port Hueneme","lat":34.145176,"lon":-119.210019,"yr":1874,"s":"Active","r":"South Coast","to":42,"ro":5,"g":"https://www.google.com/maps/dir/?api=1&origin=Santa+Cruz,CA&destination=34.145176,-119.210019"},{"id":31,"n":"Point Knox Light","loc":"San Francisco (Angel Island)","lat":37.8497,"lon":-122.4308,"yr":1900,"s":"Inactive","r":"SF Bay Area","to":11,"ro":9,"g":"https://www.google.com/maps/dir/?api=1&origin=Santa+Cruz,CA&destination=37.8497,-122.4308"},{"id":32,"n":"Point Loma Light (old)","loc":"San Diego (Point Loma)","lat":32.671983,"lon":-117.240938,"yr":1855,"s":"Inactive","r":"South Coast","to":50,"ro":13,"g":"https://www.google.com/maps/dir/?api=1&origin=Santa+Cruz,CA&destination=32.671983,-117.240938"},{"id":33,"n":"Point Loma Light (new)","loc":"San Diego (Point Loma)","lat":32.665071,"lon":-117.242621,"yr":1891,"s":"Active","r":"South Coast","to":51,"ro":14,"g":"https://www.google.com/maps/dir/?api=1&origin=Santa+Cruz,CA&destination=32.665071,-117.242621"},{"id":34,"n":"Point Montara Light","loc":"Montara","lat":37.536503,"lon":-122.519311,"yr":1900,"s":"Active","r":"SF Bay Area","to":31,"ro":3,"g":"https://www.google.com/maps/dir/?api=1&origin=Santa+Cruz,CA&destination=37.536503,-122.519311"},{"id":35,"n":"Point Pinos Light","loc":"Pacific Grove","lat":36.633389,"lon":-121.933783,"yr":1855,"s":"Active","r":"Central Coast","to":34,"ro":3,"g":"https://www.google.com/maps/dir/?api=1&origin=Santa+Cruz,CA&destination=36.633389,-121.933783"},{"id":36,"n":"Point Reyes Light","loc":"Point Reyes Station (Point Reyes)","lat":37.995621,"lon":-123.023215,"yr":1870,"s":"Active","r":"SF Bay Area","to":29,"ro":19,"g":"https://www.google.com/maps/dir/?api=1&origin=Santa+Cruz,CA&destination=37.995621,-123.023215"},{"id":37,"n":"Point San Luis Light","loc":"Avila Beach","lat":35.160362,"lon":-120.760882,"yr":1890,"s":"Inactive","r":"Central Coast","to":37,"ro":6,"g":"https://www.google.com/maps/dir/?api=1&origin=Santa+Cruz,CA&destination=35.160362,-120.760882"},{"id":38,"n":"Point Sur Light","loc":"Carmel-by-the-Sea","lat":36.3063306,"lon":-121.9014889,"yr":1889,"s":"Active","r":"Central Coast","to":35,"ro":4,"g":"https://www.google.com/maps/dir/?api=1&origin=Santa+Cruz,CA&destination=36.3063306,-121.9014889"},{"id":39,"n":"Point Vicente Light","loc":"Rancho Palos Verdes","lat":33.741867,"lon":-118.410738,"yr":1926,"s":"Active","r":"South Coast","to":43,"ro":6,"g":"https://www.google.com/maps/dir/?api=1&origin=Santa+Cruz,CA&destination=33.741867,-118.410738"},{"id":40,"n":"Punta Gorda Light","loc":"Petrolia","lat":40.249433,"lon":-124.35022,"yr":1912,"s":"Inactive","r":"North Coast","to":26,"ro":1,"g":"https://www.google.com/maps/dir/?api=1&origin=Santa+Cruz,CA&destination=40.249433,-124.35022"},{"id":41,"n":"Roe Island Light","loc":"Roe Island","lat":38.067856,"lon":-122.028166,"yr":1891,"s":"Inactive","r":"SF Bay Area","to":17,"ro":15,"g":"https://www.google.com/maps/dir/?api=1&origin=Santa+Cruz,CA&destination=38.067856,-122.028166"},{"id":42,"n":"Rubicon Point Light","loc":"South Lake Tahoe","lat":38.99583,"lon":-120.09472,"yr":1919,"s":"Inactive","r":"Lake Tahoe","to":18,"ro":1,"g":"https://www.google.com/maps/dir/?api=1&origin=Santa+Cruz,CA&destination=38.99583,-120.09472"},{"id":43,"n":"Santa Barbara Light","loc":"Santa Barbara","lat":34.39632,"lon":-119.722625,"yr":1856,"s":"Active","r":"South Coast","to":40,"ro":3,"g":"https://www.google.com/maps/dir/?api=1&origin=Santa+Cruz,CA&destination=34.39632,-119.722625"},{"id":44,"n":"Santa Cruz Light","loc":"Santa Cruz","lat":36.9514833,"lon":-122.0267667,"yr":1870,"s":"Active","r":"Central Coast","to":1,"ro":2,"g":"https://www.google.com/maps/dir/?api=1&origin=Santa+Cruz,CA&destination=36.9514833,-122.0267667"},{"id":45,"n":"Santa Cruz Breakwater Light","loc":"Santa Cruz (Santa Cruz harbor)","lat":36.960694,"lon":-122.002222,"yr":1964,"s":"Active","r":"Central Coast","to":2,"ro":1,"g":"https://www.google.com/maps/dir/?api=1&origin=Santa+Cruz,CA&destination=36.960694,-122.002222"},{"id":46,"n":"Southampton Shoal Light","loc":"San Francisco Bay","lat":37.88193917,"lon":-122.4002325,"yr":1905,"s":"Inactive","r":"SF Bay Area","to":13,"ro":10,"g":"https://www.google.com/maps/dir/?api=1&origin=Santa+Cruz,CA&destination=37.88193917,-122.4002325"},{"id":47,"n":"St. George Reef Light","loc":"Crescent City","lat":41.83633,"lon":-124.37587,"yr":1892,"s":"Active","r":"North Coast","to":21,"ro":7,"g":"https://www.google.com/maps/dir/?api=1&origin=Santa+Cruz,CA&destination=41.83633,-124.37587"},{"id":48,"n":"Sugar Pine Point Light","loc":"Tahoma","lat":39.061266,"lon":-120.113971,"yr":1921,"s":"Inactive","r":"Lake Tahoe","to":19,"ro":2,"g":"https://www.google.com/maps/dir/?api=1&origin=Santa+Cruz,CA&destination=39.061266,-120.113971"},{"id":49,"n":"Table Bluff Light","loc":"Table Bluff","lat":40.6958389,"lon":-124.2739333,"yr":1892,"s":"Inactive","r":"North Coast","to":24,"ro":3,"g":"https://www.google.com/maps/dir/?api=1&origin=Santa+Cruz,CA&destination=40.6958389,-124.2739333"},{"id":50,"n":"Trinidad Head Light","loc":"Trinidad","lat":41.051944,"lon":-124.151444,"yr":1871,"s":"Active","r":"North Coast","to":22,"ro":5,"g":"https://www.google.com/maps/dir/?api=1&origin=Santa+Cruz,CA&destination=41.051944,-124.151444"},{"id":51,"n":"Yerba Buena Light","loc":"San Francisco Yerba Buena Island","lat":37.8072972,"lon":-122.3623028,"yr":1875,"s":"Active","r":"SF Bay Area","to":4,"ro":13,"g":"https://www.google.com/maps/dir/?api=1&origin=Santa+Cruz,CA&destination=37.8072972,-122.3623028"}]};
+const REGIONS = ["SF Bay Area","Central Coast","Mendocino Coast","North Coast","Lake Tahoe","South Coast"];
+
+// ---------- California outline (lon,lat) ----------
+const COAST = [
+ [-124.21,41.99],[-124.36,40.44],[-124.11,40.10],[-123.83,39.35],[-123.73,38.95],
+ [-123.00,38.30],[-122.53,37.78],[-122.40,37.20],[-122.42,36.95],[-121.90,36.55],
+ [-121.89,36.30],[-121.28,35.66],[-120.90,35.45],[-120.67,34.90],[-120.65,34.58],
+ [-120.47,34.45],[-119.70,34.42],[-119.23,34.27],[-118.50,34.02],[-118.40,33.74],
+ [-118.19,33.72],[-117.92,33.63],[-117.32,33.20],[-117.26,32.85],[-117.24,32.67],
+ [-117.13,32.53],
+ [-114.72,32.72],[-114.63,33.42],[-114.52,33.69],[-114.14,34.30],[-114.38,34.46],
+ [-114.63,35.00],[-120.00,39.00],[-120.00,41.99]
+];
+
+// ---------- projection ----------
+const VB={w:600,h:740,m:26};
+const latMid=37*Math.PI/180, kx=Math.cos(latMid);
+let allLon=COAST.map(p=>p[0]).concat(DATA.items.map(d=>d.lon),[DATA.anchor.lon]);
+let allLat=COAST.map(p=>p[1]).concat(DATA.items.map(d=>d.lat),[DATA.anchor.lat]);
+const lonMin=Math.min(...allLon),lonMax=Math.max(...allLon);
+const latMin=Math.min(...allLat),latMax=Math.max(...allLat);
+const xr=(lonMax-lonMin)*kx, yr=(latMax-latMin);
+const sc=Math.min((VB.w-2*VB.m)/xr,(VB.h-2*VB.m)/yr);
+const offx=(VB.w-xr*sc)/2, offy=(VB.h-yr*sc)/2;
+function proj(lon,lat){
+  return [offx+(lon-lonMin)*kx*sc, offy+(latMax-lat)*sc];
+}
+const NS="http://www.w3.org/2000/svg";
+function el(t,a){const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);return e;}
+
+// ---------- build map ----------
+const svg=document.getElementById('map');
+// graticule
+for(let L=-124;L<=-116;L+=2){const[a]=proj(L,latMax);const[,b]=proj(L,latMin);
+  svg.appendChild(el('line',{x1:proj(L,latMax)[0],y1:proj(L,latMax)[1],x2:proj(L,latMin)[0],y2:proj(L,latMin)[1],class:'grid'}));}
+for(let La=34;La<=42;La+=2){
+  svg.appendChild(el('line',{x1:proj(lonMin,La)[0],y1:proj(lonMin,La)[1],x2:proj(lonMax,La)[0],y2:proj(lonMax,La)[1],class:'grid'}));}
+// coast polygon
+let dpath='M'+COAST.map(p=>proj(p[0],p[1]).map(v=>v.toFixed(1)).join(',')).join(' L')+' Z';
+svg.appendChild(el('path',{d:dpath,class:'coast'}));
+// route layer (under markers)
+const routeLayer=el('g',{}); svg.appendChild(routeLayer);
+// anchor (Santa Cruz)
+const[ax,ay]=proj(DATA.anchor.lon,DATA.anchor.lat);
+const ag=el('g',{class:'anchor'});
+ag.appendChild(el('path',{d:`M${ax} ${ay-7} l2.2 4.6 5 .5 -3.8 3.4 1.1 5 -4.5 -2.6 -4.5 2.6 1.1 -5 -3.8 -3.4 5 -.5 Z`}));
+ag.appendChild(el('text',{x:ax+9,y:ay+3},));
+ag.lastChild.textContent='Santa Cruz';
+svg.appendChild(ag);
+
+// markers
+const mkLayer=el('g',{}); svg.appendChild(mkLayer);
+const byId={}; const markers={};
+DATA.items.forEach(d=>{byId[d.id]=d;
+  const[x,y]=proj(d.lon,d.lat);
+  const cls=d.s==='Active'?'active':d.s==='Inactive'?'inactive':'unknown';
+  const g=el('g',{class:'mk '+cls,'data-id':d.id,transform:`translate(${x.toFixed(1)},${y.toFixed(1)})`});
+  g.appendChild(el('circle',{class:'beam',r:7,cx:0,cy:0}));
+  g.appendChild(el('circle',{class:'ring',r:5.4,cx:0,cy:0,fill:'none',stroke:'transparent','stroke-width':2}));
+  g.appendChild(el('circle',{class:'dot',r:3.4,cx:0,cy:0}));
+  g.appendChild(el('circle',{class:'hit',r:11,cx:0,cy:0}));
+  mkLayer.appendChild(g); markers[d.id]=g;
+  g.addEventListener('mouseenter',e=>showTip(e,d));
+  g.addEventListener('mousemove',e=>moveTip(e));
+  g.addEventListener('mouseleave',hideTip);
+  g.addEventListener('click',()=>select(d.id,true));
+});
+
+// ---------- tooltip ----------
+const tip=document.getElementById('tip');
+function showTip(e,d){tip.innerHTML=`<div class="tn">${d.n}</div><div class="tm">${d.loc} &middot; ${d.yr||'?'} &middot; ${d.s}</div>`;tip.style.opacity=1;moveTip(e);}
+function moveTip(e){const r=svg.parentElement.getBoundingClientRect();
+  let x=e.clientX-r.left+12,y=e.clientY-r.top+12;
+  if(x>r.width-180)x-=200; tip.style.left=x+'px';tip.style.top=y+'px';}
+function hideTip(){tip.style.opacity=0;}
+
+// ---------- state ----------
+let fRegion='all', fStatus='all', fSearch='', selId=null;
+
+// ---------- list ----------
+const list=document.getElementById('list');
+const rows={};
+function statusDot(s){return s==='Active'?'active':s==='Inactive'?'inactive':'unknown';}
+function renderList(){
+  list.innerHTML='';
+  const items=DATA.items.slice().sort((a,b)=> fRegion==='all'? a.to-b.to : a.ro-b.ro);
+  items.forEach(d=>{
+    const row=el2('div','row'); row.dataset.id=d.id;
+    const ordNum = fRegion==='all'? d.to : d.ro;
+    row.innerHTML=`<div class="ord">${ordNum}</div>
+      <div><div class="nm">${d.n}</div>
+        <div class="meta"><span><span class="dotS ${statusDot(d.s)}"></span>${d.s}</span>
+        <span class="tag">${d.r}</span><span>${d.loc}</span>
+        <span>${d.yr?('lit '+d.yr):'year unknown'}</span></div></div>
+      <a class="dir" href="${d.g}" target="_blank" rel="noopener">Directions &#8599;</a>`;
+    row.addEventListener('click',ev=>{if(ev.target.closest('.dir'))return;select(d.id,false);});
+    list.appendChild(row); rows[d.id]=row;
+  });
+}
+function el2(t,c){const e=document.createElement(t);if(c)e.className=c;return e;}
+
+// ---------- region routes ----------
+function drawRoute(){
+  routeLayer.innerHTML='';
+  document.getElementById('distNote').textContent='';
+  if(fRegion==='all'){document.getElementById('routeNote').textContent='Showing all regions';return;}
+  const seq=DATA.regionRoutes[fRegion]; if(!seq||seq.length<1)return;
+  let pts=[[DATA.anchor.lon,DATA.anchor.lat]].concat(seq.map(id=>[byId[id].lon,byId[id].lat]));
+  let d='M'+pts.map(p=>proj(p[0],p[1]).map(v=>v.toFixed(1)).join(',')).join(' L');
+  routeLayer.appendChild(el('path',{d:d,class:'routeline'}));
+  // distance
+  let km=0;for(let i=1;i<pts.length;i++)km+=hav(pts[i-1],pts[i]);
+  document.getElementById('routeNote').innerHTML=`<b>${fRegion}</b> &middot; ${seq.length} stops in order`;
+  document.getElementById('distNote').textContent=Math.round(km*0.621)+' mi route';
+}
+function hav(a,b){const R=6371,t=Math.PI/180;
+  const dLa=(b[1]-a[1])*t,dLo=(b[0]-a[0])*t;
+  const h=Math.sin(dLa/2)**2+Math.cos(a[1]*t)*Math.cos(b[1]*t)*Math.sin(dLo/2)**2;
+  return 2*R*Math.asin(Math.sqrt(h));}
+
+// ---------- filtering ----------
+function applyFilters(){
+  let shown=0;
+  DATA.items.forEach(d=>{
+    const okR = fRegion==='all'||d.r===fRegion;
+    const okS = fStatus==='all'||d.s===fStatus;
+    const q=fSearch.trim().toLowerCase();
+    const okQ = !q || d.n.toLowerCase().includes(q)||d.loc.toLowerCase().includes(q);
+    const vis = okR&&okS&&okQ;
+    rows[d.id].classList.toggle('hidden',!vis);
+    markers[d.id].classList.toggle('dim',!vis);
+    if(vis)shown++;
+  });
+  document.getElementById('empty').style.display=shown?'none':'block';
+}
+
+// ---------- selection ----------
+function select(id,fromMap){
+  if(selId!=null){markers[selId].classList.remove('sel');rows[selId]&&rows[selId].classList.remove('sel');}
+  selId=id;
+  markers[id].classList.add('sel');
+  const r=rows[id]; if(r){r.classList.add('sel'); if(!fromMap===false||fromMap){} r.scrollIntoView({behavior:'smooth',block:'nearest'});}
+  // bring marker to front
+  markers[id].parentNode.appendChild(markers[id]);
+}
+
+// ---------- region chips ----------
+const chipWrap=document.getElementById('regionChips');
+function mkChip(label,val){const b=el2('button','chip'+(val===fRegion?' on':''));b.textContent=label;b.dataset.v=val;
+  b.onclick=()=>{fRegion=val;[...chipWrap.children].forEach(c=>c.classList.toggle('on',c.dataset.v===val));
+    renderList();applyFilters();drawRoute();};chipWrap.appendChild(b);}
+mkChip('All regions','all');
+REGIONS.forEach(r=>mkChip(r,r));
+
+// status segment
+document.getElementById('statusSeg').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b)return;
+  fStatus=b.dataset.s;[...e.currentTarget.children].forEach(c=>c.classList.toggle('on',c===b));
+  applyFilters();
+});
+document.getElementById('search').addEventListener('input',e=>{fSearch=e.target.value;applyFilters();});
+
+// counts
+document.getElementById('cActive').textContent=DATA.items.filter(d=>d.s==='Active').length;
+document.getElementById('cDead').textContent=DATA.items.filter(d=>d.s==='Inactive').length;
+
+renderList();applyFilters();drawRoute();
+</script>
+</body>
+</html>
